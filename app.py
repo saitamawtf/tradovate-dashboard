@@ -6,7 +6,9 @@ Flask app con dashboard para visualizar estadísticas de trading
 from flask import Flask, render_template, jsonify, request
 import os
 import json
+from datetime import datetime, timedelta
 from tradovate_api import TradovateDashboard, TradovateAPI
+from analytics import AnalyticsEngine, Trade, TradeDirection
 
 app = Flask(__name__)
 
@@ -80,7 +82,12 @@ def performance():
     """Métricas de rendimiento"""
     if 'dashboard' not in globals():
         return jsonify({"error": "No conectado"}), 400
-    return jsonify(dashboard.get_performance())
+    
+    # Usar el motor de análisis
+    trades = _get_trades_for_analytics()
+    analytics = AnalyticsEngine(trades)
+    
+    return jsonify(analytics.get_summary())
 
 
 @app.route('/api/dashboard/trades')
@@ -103,6 +110,62 @@ def positions():
     return jsonify(positions)
 
 
+@app.route('/api/analytics/symbols')
+def symbol_performance():
+    """Rendimiento por símbolo"""
+    trades = _get_trades_for_analytics()
+    analytics = AnalyticsEngine(trades)
+    return jsonify(analytics.get_symbol_performance())
+
+
+@app.route('/api/analytics/daily')
+def daily_stats():
+    """Estadísticas diarias"""
+    trades = _get_trades_for_analytics()
+    analytics = AnalyticsEngine(trades)
+    return jsonify(analytics.get_daily_stats())
+
+
+@app.route('/api/analytics/hourly')
+def hourly_performance():
+    """Rendimiento por hora"""
+    trades = _get_trades_for_analytics()
+    analytics = AnalyticsEngine(trades)
+    return jsonify(analytics.get_hourly_performance())
+
+
+@app.route('/api/analytics/direction')
+def direction_performance():
+    """Rendimiento BUY vs SELL"""
+    trades = _get_trades_for_analytics()
+    analytics = AnalyticsEngine(trades)
+    return jsonify(analytics.get_direction_performance())
+
+
+@app.route('/api/analytics/equity')
+def equity_curve():
+    """Curva de equity"""
+    trades = _get_trades_for_analytics()
+    analytics = AnalyticsEngine(trades)
+    return jsonify(analytics.get_equity_curve())
+
+
+@app.route('/api/analytics/full')
+def full_analytics():
+    """Análisis completo para gráficos avanzados"""
+    trades = _get_trades_for_analytics()
+    analytics = AnalyticsEngine(trades)
+    
+    return jsonify({
+        'summary': analytics.get_summary(),
+        'symbols': analytics.get_symbol_performance(),
+        'daily': analytics.get_daily_stats(),
+        'hourly': analytics.get_hourly_performance(),
+        'direction': analytics.get_direction_performance(),
+        'equity_curve': analytics.get_equity_curve()
+    })
+
+
 @app.route('/api/disconnect', methods=['POST'])
 def disconnect():
     """Desconecta y limpia sesión"""
@@ -112,12 +175,72 @@ def disconnect():
     return jsonify({"success": True})
 
 
+def _get_trades_for_analytics():
+    """Convierte trades del dashboard al formato del analytics engine"""
+    if 'dashboard' not in globals():
+        return []
+    
+    # Crear trades de ejemplo para demo (reemplazar con datos reales)
+    trades = []
+    from datetime import datetime
+    
+    # Demo data si no hay trades reales
+    if not dashboard.trades:
+        # Generar datos de ejemplo para demostración
+        import random
+        symbols = ['MNQ', 'MES', 'NQ', 'ES']
+        directions = [TradeDirection.BUY, TradeDirection.SELL]
+        
+        base_time = datetime.now()
+        for i in range(100):
+            direction = random.choice(directions)
+            symbol = random.choice(symbols)
+            pnl = random.uniform(-500, 800)
+            commission = random.uniform(2, 5)
+            
+            trade = Trade(
+                id=f"trade_{i}",
+                symbol=symbol,
+                direction=direction,
+                quantity=random.randint(1, 5),
+                price=random.uniform(4000, 5000),
+                timestamp=base_time - timedelta(hours=random.randint(0, 720)),
+                pnl=round(pnl, 2),
+                commission=round(commission, 2)
+            )
+            trades.append(trade)
+    else:
+        for t in dashboard.trades:
+            direction = TradeDirection.BUY if t.direction.value == "Buy" else TradeDirection.SELL
+            trade = Trade(
+                id=t.id,
+                symbol=t.symbol,
+                direction=direction,
+                quantity=t.quantity,
+                price=t.price,
+                timestamp=t.timestamp,
+                pnl=t.pnl,
+                commission=t.commission
+            )
+            trades.append(trade)
+    
+    return trades
+
+
 if __name__ == '__main__':
     print("""
     ╔══════════════════════════════════════════════════════════════╗
     ║              TRADOVATE TRADING DASHBOARD                    ║
+    ║                    Advanced Analytics                        ║
     ║                                                              ║
     ║  🚀 Servidor iniciando en http://localhost:5000             ║
+    ║                                                              ║
+    ║  Características:                                            ║
+    ║  → Métricas avanzadas de rendimiento                         ║
+    ║  → Análisis por símbolo                                     ║
+    ║  → Estadísticas horarias                                     ║
+    ║  → Drawdown y curva de equity                                ║
+    ║  → Rendimiento BUY vs SELL                                   ║
     ║                                                              ║
     ║  Abre tu navegador y vai a:                                  ║
     ║  → http://localhost:5000                                     ║
