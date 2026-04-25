@@ -2345,9 +2345,9 @@
                     trades = data.trades || 0;
                     pnl = data.pnl || 0;
                     if (data.is_profitable) {
-                        className += ' ' + (data.pnl > 100 ? ' strong-positive' : ' positive') + ';
+                        className += (data.pnl > 100 ? ' strong-positive' : ' positive');
                     } else {
-                        className += ' ' + (data.pnl < -100 ? ' strong-negative' : ' negative') + ';
+                        className += (data.pnl < -100 ? ' strong-negative' : ' negative');
                     }
                 }
                 
