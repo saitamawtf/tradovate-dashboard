@@ -2338,12 +2338,10 @@
             grid.innerHTML = days.map(day => {
                 const data = day.data;
                 let className = 'heatmap-cell';
-                let trades = '';
-                let pnl = '';
+                const trades = (data && data.is_trading_day) ? (data.trades || 0) : null;
+                const pnl = (data && data.is_trading_day) ? (data.pnl || 0) : 0;
                 
                 if (data && data.is_trading_day) {
-                    trades = data.trades || 0;
-                    pnl = data.pnl || 0;
                     if (data.is_profitable) {
                         className += (data.pnl > 100 ? ' strong-positive' : ' positive');
                     } else {
@@ -2351,7 +2349,9 @@
                     }
                 }
                 
-                return `<div class="${className}" title="${day.date}: ${trades} trades, $${pnl.toFixed(2)}">${trades || '-'}</div>`;
+                const pnlStr = typeof pnl === 'number' ? pnl.toFixed(2) : '0.00';
+                const tradesStr = trades !== null ? trades : '-';
+                return '<div class="' + className + '" title="' + day.date + ': ' + tradesStr + ' trades, $' + pnlStr + '">' + tradesStr + '</div>';
             }).join('');
         }
 
@@ -2359,26 +2359,30 @@
             const bestBody = document.getElementById('bestDaysBody');
             const worstBody = document.getElementById('worstDaysBody');
             
-            if (bestBody && bw.best) {
+            if (bestBody && bw.best && bw.best.length) {
                 bestBody.innerHTML = bw.best.map(d => `
                     <tr>
-                        <td class="font-mono">${d.date}</td>
-                        <td class="font-mono">${d.trades}</td>
-                        <td class="font-mono text-green">$${d.pnl.toFixed(2)}</td>
-                        <td class="font-mono">${d.win_rate?.toFixed(0)}%</td>
+                        <td class="font-mono">${d.date || ''}</td>
+                        <td class="font-mono">${d.trades || 0}</td>
+                        <td class="font-mono text-green">$${(d.pnl || 0).toFixed(2)}</td>
+                        <td class="font-mono">${(d.win_rate || 0).toFixed(0)}%</td>
                     </tr>
                 `).join('') || '<tr><td colspan="4" class="text-muted">No data</td></tr>';
+            } else if (bestBody) {
+                bestBody.innerHTML = '<tr><td colspan="4" class="text-muted">No data</td></tr>';
             }
             
-            if (worstBody && bw.worst) {
+            if (worstBody && bw.worst && bw.worst.length) {
                 worstBody.innerHTML = bw.worst.map(d => `
                     <tr>
-                        <td class="font-mono">${d.date}</td>
-                        <td class="font-mono">${d.trades}</td>
-                        <td class="font-mono text-red">$${d.pnl.toFixed(2)}</td>
-                        <td class="font-mono">${d.win_rate?.toFixed(0)}%</td>
+                        <td class="font-mono">${d.date || ''}</td>
+                        <td class="font-mono">${d.trades || 0}</td>
+                        <td class="font-mono text-red">$${(d.pnl || 0).toFixed(2)}</td>
+                        <td class="font-mono">${(d.win_rate || 0).toFixed(0)}%</td>
                     </tr>
                 `).join('') || '<tr><td colspan="4" class="text-muted">No data</td></tr>';
+            } else if (worstBody) {
+                worstBody.innerHTML = '<tr><td colspan="4" class="text-muted">No data</td></tr>';
             }
         }
 
