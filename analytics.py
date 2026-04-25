@@ -304,6 +304,30 @@ class AnalyticsEngine:
         
         return sorted(daily.values(), key=lambda x: x['date'], reverse=True)
     
+    def get_direction_performance(self) -> Dict:
+        """Rendimiento por dirección (BUY vs SELL)"""
+        buy_trades = [t for t in self.trades if t.direction == TradeDirection.BUY]
+        sell_trades = [t for t in self.trades if t.direction == TradeDirection.SELL]
+        
+        return {
+            'buy': {
+                'total_trades': len(buy_trades),
+                'winning_trades': len([t for t in buy_trades if t.pnl > 0]),
+                'losing_trades': len([t for t in buy_trades if t.pnl < 0]),
+                'total_pnl': sum(t.pnl for t in buy_trades),
+                'avg_pnl': sum(t.pnl for t in buy_trades) / len(buy_trades) if buy_trades else 0,
+                'win_rate': len([t for t in buy_trades if t.pnl > 0]) / len(buy_trades) * 100 if buy_trades else 0
+            },
+            'sell': {
+                'total_trades': len(sell_trades),
+                'winning_trades': len([t for t in sell_trades if t.pnl > 0]),
+                'losing_trades': len([t for t in sell_trades if t.pnl < 0]),
+                'total_pnl': sum(t.pnl for t in sell_trades),
+                'avg_pnl': sum(t.pnl for t in sell_trades) / len(sell_trades) if sell_trades else 0,
+                'win_rate': len([t for t in sell_trades if t.pnl > 0]) / len(sell_trades) * 100 if sell_trades else 0
+            }
+        }
+    
     def get_equity_curve(self) -> List[Dict]:
         """Curva de equity para gráficos"""
         curve = []
